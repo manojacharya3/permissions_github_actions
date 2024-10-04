@@ -1,0 +1,47 @@
+name: Permission Management
+
+on:
+  workflow_dispatch:  # Allows manual trigger
+    inputs:
+      action:
+        description: 'Choose the action to perform'
+        required: true
+        default: 'create'
+        type: choice
+        options:
+          - create
+          - delete
+      permission_name:
+        description: 'Name of the permission'
+        required: true
+
+jobs:
+  manage_permissions:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v2
+
+    - name: Set up Python
+      uses: actions/setup-python@v2
+      with:
+        python-version: '3.8'
+
+    - name: Install Dependencies
+      run: |
+        py -m pip install --upgrade pip
+        py -m pip install requests urllib3
+
+    - name: Run Permission Script
+      env:
+        ARTIFACTORY_TOKEN: ${{ secrets.ARTIFACTORY_TOKEN }}  # Your token stored as a secret
+      run: |
+        if [ "${{ github.event.inputs.action }}" == "create" ]; then
+          py create_permission.py "${{ github.event.inputs.permission_name }}"
+        elif [ "${{ github.event.inputs.action }}" == "delete" ]; then
+          py delete_permission.py "${{ github.event.inputs.permission_name }}"
+        else
+          echo "Invalid action specified."
+          exit 1
+        fi
